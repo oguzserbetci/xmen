@@ -15,6 +15,8 @@ xMEN is available through [PyPi](https://pypi.org/project/xmen/):
 
 `pip install xmen`
 
+`xmen` currently supports Python 3.9 through 3.12. Python 3.13 is not supported yet because `scispacy` currently requires Python `<3.13`.
+
 The most robust way to install `xmen` is to use a `conda` environment, as binaries for some dependencies (e.g, `nmslib`, `faiss`) are available through `conda` for most platforms.
 
 An example for installing xMEN within a Docker image is available [here](https://github.com/hpi-dhc/xmen-inception-recommender/blob/main/Dockerfile).
@@ -25,6 +27,8 @@ If you encounter issues installing `xmen` from `pip`, please see here: https://g
 ### Development
 
 We use [Poetry](https://python-poetry.org/) for building, testing and dependency management (see [pyproject.toml](pyproject.toml)).
+The CI workflow exercises the lowest supported Python version (3.9) and the newest supported version (3.12).
+If you work on the SciSpaCy-based translation utilities locally, install a matching `en_core_sci_sm` model separately after `poetry install`.
 
 ## 🚀 Getting Started
 
