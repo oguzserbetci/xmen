@@ -252,7 +252,7 @@ class TFIDFNGramLinker(EntityLinker):
         - entities: A dictionary representing the updated entities object.
         """
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", np.VisibleDeprecationWarning)
+            warnings.simplefilter("ignore", np.exceptions.VisibleDeprecationWarning)
 
             def get_m_string(e):
                 if self.expand_abbreviations and e.get("long_form", None):
