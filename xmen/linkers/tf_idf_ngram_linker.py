@@ -1,12 +1,15 @@
+import datetime
+import json
 import pickle
 from pathlib import Path
 import joblib
-import json
 import numpy as np
+import scipy
+import nmslib
 
 import warnings
 
-from typing import Union, List
+from typing import Any, Union, List, Optional, Tuple
 
 from xmen.linkers import EntityLinker, logger
 from xmen.kb import CompositeKnowledgebase
@@ -15,10 +18,79 @@ from scispacy.candidate_generation import (
     CandidateGenerator,
     load_approximate_nearest_neighbours_index,
     LinkerPaths,
-    create_tfidf_ann_index,
 )
 from scispacy.linking import EntityLinker as ScispacyLinker
-from scispacy.linking_utils import KnowledgeBase
+from scispacy.linking_utils import KnowledgeBase, UmlsKnowledgeBase
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+
+def create_tfidf_ann_index(
+    out_path: Optional[str],
+    kb: Optional[KnowledgeBase] = None,
+    *,
+    ef_search: int = 200,
+) -> Tuple[List[str], TfidfVectorizer, Any]:
+    """
+    Build a TF-IDF vectorizer and ANN index.
+
+    This is based on scispaCy's implementation, but it keeps the sparse TF-IDF
+    matrix in float32 so it continues to work with scipy versions available on
+    Python 3.11+.
+    """
+    if out_path is None:
+        linker_paths = None
+    else:
+        linker_paths = LinkerPaths.from_directory(out_path)
+        if linker_paths.is_locally_cached():
+            return linker_paths.load(ef_search=ef_search)
+
+    kb = kb or UmlsKnowledgeBase()
+
+    index_params = {
+        "M": 100,
+        "indexThreadQty": 60,
+        "efConstruction": 2000,
+        "post": 0,
+    }
+
+    concept_aliases = list(kb.alias_to_cuis.keys())
+
+    tfidf_vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 3), min_df=10, dtype=np.float32)
+    start_time = datetime.datetime.now()
+    concept_alias_tfidfs = tfidf_vectorizer.fit_transform(concept_aliases)
+    if linker_paths is not None:
+        joblib.dump(tfidf_vectorizer, linker_paths.tfidf_vectorizer)
+    logger.info(
+        "Fitting and saving vectorizer took %s seconds",
+        (datetime.datetime.now() - start_time).total_seconds(),
+    )
+
+    empty_tfidfs_boolean_flags = np.array(concept_alias_tfidfs.sum(axis=1) != 0).reshape(-1)
+    concept_aliases = [alias for alias, flag in zip(concept_aliases, empty_tfidfs_boolean_flags) if flag]
+    concept_alias_tfidfs = concept_alias_tfidfs[empty_tfidfs_boolean_flags]
+    assert len(concept_aliases) == np.size(concept_alias_tfidfs, 0)
+
+    if linker_paths is not None:
+        with open(linker_paths.concept_aliases_list, "w", encoding="utf-8") as file:
+            json.dump(concept_aliases, file)
+        scipy.sparse.save_npz(linker_paths.tfidf_vectors, concept_alias_tfidfs)
+
+    start_time = datetime.datetime.now()
+    ann_index = nmslib.init(
+        method="hnsw",
+        space="cosinesimil_sparse",
+        data_type=nmslib.DataType.SPARSE_VECTOR,
+    )
+    ann_index.addDataPointBatch(concept_alias_tfidfs)
+    ann_index.createIndex(index_params, print_progress=True)
+    if linker_paths is not None:
+        ann_index.saveIndex(linker_paths.ann_index)
+    logger.info(
+        "Fitting ann index took %s seconds",
+        (datetime.datetime.now() - start_time).total_seconds(),
+    )
+
+    return concept_aliases, tfidf_vectorizer, ann_index
 
 
 class TFIDFNGramLinker(EntityLinker):
@@ -127,12 +199,12 @@ class TFIDFNGramLinker(EntityLinker):
             expand_abbreviations=expand_abbreviations if expand_abbreviations else default_linker.resolve_abbreviations,
             k=k if k else default_linker.k,
             threshold=threshold if threshold else default_linker.threshold,
-            no_definition_threshold=no_definition_threshold
-            if no_definition_threshold
-            else default_linker.no_definition_threshold,
-            filter_for_definitions=filter_for_definitions
-            if filter_for_definitions
-            else default_linker.filter_for_definitions,
+            no_definition_threshold=(
+                no_definition_threshold if no_definition_threshold else default_linker.no_definition_threshold
+            ),
+            filter_for_definitions=(
+                filter_for_definitions if filter_for_definitions else default_linker.filter_for_definitions
+            ),
             filter_types=False,
         )
 
