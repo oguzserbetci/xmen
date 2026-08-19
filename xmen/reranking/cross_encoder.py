@@ -19,7 +19,6 @@ from datasets import DatasetDict
 from xmen.data import IndexedDatasetDict, IndexedDataset, Deduplicator
 
 import logging
-from sentence_transformers import LoggingHandler
 
 logger = logging.getLogger(__name__)
 
@@ -386,7 +385,7 @@ class CrossEncoderReranker(Reranker):
             format="%(asctime)s - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
             level=logging.INFO,
-            handlers=[LoggingHandler()],
+            handlers=[logging.StreamHandler()],
         )
         #### /print debug information to stdout
 

@@ -12,21 +12,21 @@ xmen = "xmen.cli.cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13" # Python 3.13 is not yet supported by scispaCy
-datasets = "^2.0.0"
-lxml = "^4.8.0"
-transformers = "^4.17.0"
+datasets = ">=2.0.0"
+lxml = ">=4.8.0"
+transformers = ">=4.17.0"
 neleval = "^3.1.1"
 numpy = ">=1.26"
-pytorch-metric-learning = "0.9.98.dev1"
-sentencepiece = "^0.1.96"
-protobuf = "^3.20.0"
+pytorch-metric-learning = ">=0.9.98"
+sentencepiece = ">=0.1.96"
+protobuf = ">=3.20.0"
 omegaconf = "^2.3.0"
 langcodes = "^3.3.0"
-rich = "^12.3.0"
+rich = ">=12.3.0"
 pandas = ">=2.2,<3.0"
 torch = ">=1.13.0,!=2.0.1, !=2.1.0" # Some version don't seem to be compatible with Poetry
 scispacy = "^0.6.2"
-sentence-transformers = "^2.2.2"
+sentence-transformers = ">=2.2.2"
 faiss-gpu = { version = "^1.15.0", markers = "python_version >= '3.10' and platform_system == 'Linux' and platform_machine == 'x86_64'" }
 faiss-cpu = { version = "~1.8.0", markers = "python_version < '3.10' or platform_system != 'Linux' or platform_machine != 'x86_64'" }
 orjson = "^3.9.1"
