@@ -4,6 +4,9 @@ import pickle
 from pathlib import Path
 import joblib
 import numpy as np
+
+# np.VisibleDeprecationWarning was moved to np.exceptions in NumPy 2.0
+_NpVisibleDeprecationWarning = getattr(np, "exceptions", np).VisibleDeprecationWarning
 import scipy
 import nmslib
 
@@ -252,7 +255,7 @@ class TFIDFNGramLinker(EntityLinker):
         - entities: A dictionary representing the updated entities object.
         """
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", np.VisibleDeprecationWarning)
+            warnings.simplefilter("ignore", _NpVisibleDeprecationWarning)
 
             def get_m_string(e):
                 if self.expand_abbreviations and e.get("long_form", None):
