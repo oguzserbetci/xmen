@@ -73,7 +73,7 @@ def create_tfidf_ann_index(
     if linker_paths is not None:
         with open(linker_paths.concept_aliases_list, "w", encoding="utf-8") as file:
             json.dump(concept_aliases, file)
-        scipy.sparse.save_npz(linker_paths.tfidf_vectors, concept_alias_tfidfs.astype(np.float32))
+        scipy.sparse.save_npz(linker_paths.tfidf_vectors, concept_alias_tfidfs)
 
     start_time = datetime.datetime.now()
     ann_index = nmslib.init(
